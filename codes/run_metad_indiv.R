@@ -161,10 +161,10 @@ plot_title <- ggtitle("Posterior distributions",
 pd_meta_d <- mcmc_areas(output, regex_pars = 'meta_d', prob = 0.95) + plot_title
 ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_meta_d.jpg'), pd_meta_d, width=40, height=24, units="cm", dpi=300)
 
-pd_cS1 <- mcmc_intervals(output, pars = c(paste0('cS1[', c(1:K), ',1]'), paste0('cS1[', c(1:K), ',2]'), paste0('cS1[', c(1:K), ',3]')), prob = 0.95) + plot_title
+pd_cS1 <- mcmc_intervals(output, pars = c(paste0('cS1[', c(1:N), ',1]'), paste0('cS1[', c(1:N), ',2]'), paste0('cS1[', c(1:N), ',3]')), prob = 0.95) + plot_title
 ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_cS1.jpg'), pd_cS1, width=40, height=24, units="cm", dpi=300)
 
-pd_cS2 <- mcmc_intervals(output, pars = c(paste0('cS2[', c(1:K), ',1]'), paste0('cS2[', c(1:K), ',2]'), paste0('cS2[', c(1:K), ',3]')), prob = 0.95) + plot_title
+pd_cS2 <- mcmc_intervals(output, pars = c(paste0('cS2[', c(1:N), ',1]'), paste0('cS2[', c(1:N), ',2]'), paste0('cS2[', c(1:N), ',3]')), prob = 0.95) + plot_title
 ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_cS2.jpg'), pd_cS2, width=40, height=24, units="cm", dpi=300)
 
 pd_Mratio <- mcmc_areas(output, regex_pars = 'Mratio', prob = 0.95) + plot_title
