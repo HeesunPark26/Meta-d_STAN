@@ -134,9 +134,9 @@ extract_output <- rstan::extract(output)
 
 for (j in 1:(nratings*4)){
   
-  PP_dens_tmp <- ppc_dens_overlay(counts[,j], extract_output$counts_pred[1:50,,j])+ggtitle(paste0("counts[",j,"]")) #for all subj, count[,i]
+  PP_dens_tmp <- ppc_dens_overlay(counts[,j], extract_output$y_pred[1:50,,j])+ggtitle(paste0("counts[",j,"]")) #for all subj, count[,i]
   assign(paste0("PP_dens", j), PP_dens_tmp)
-  PP_hist_tmp <- ppc_hist(counts[,j],extract_output$counts_pred[1:50,,j])+ggtitle(paste0("counts[",j,"]")) #for all subj, count[,i]
+  PP_hist_tmp <- ppc_hist(counts[,j],extract_output$y_pred[1:50,,j])+ggtitle(paste0("counts[",j,"]")) #for all subj, count[,i]
   assign(paste0("PP_hist",j), PP_hist_tmp)
 }
 
