@@ -20,42 +20,41 @@ functions {
 }
 
 data {
-  int<lower=1> K;             //Number of Subjects
+  int<lower=1> N;             //Number of Subjects
   
-  // Type 1 counts
-  int<lower=0> N[K];          // Noise (S1 stimulus trials)
-  int<lower=0> S[K];          // Signal (S2 stimulus trials)
-  int<lower=0> H[K];          // Hit trials (resp=S2, stim=S2)
-  int<lower=0> FA[K];         // False Alarm (resp=S2, stim=S1)
-  int<lower=0> CR[K];         // Correct rejection(resp=S1, stim=S1)
-  int<lower=0> M[K];          // Miss (resp=S1, stim = S2)
+  // Type 1 data
+  int<lower=0> H[N];          // Hit trials (resp=S2, stim=S2)
+  int<lower=0> FA[N];         // False Alarm (resp=S2, stim=S1)
+  int<lower=0> CR[N];         // Correct rejection(resp=S1, stim=S1)
+  int<lower=0> M[N];          // Miss (resp=S1, stim = S2)
+  
   //Type 2 data
   int<lower=1> nratings;      //the number of ratings
-  int counts[K, 4*nratings];  //count vectors for all subjects, counts = [nR_S1, nR_S2]
+  int counts[N, 4*nratings];  //count vectors for all subjects, counts = [nR_S1, nR_S2]
   
   // Type 1 SDT parameters
-  vector[K] d1;               // Type 1 discriminability
-  vector[K] c1;               // Type 1 bias
+  vector[N] d1;               // Type 1 discriminability
+  vector[N] c1;               // Type 1 bias
 }
 
 parameters {  
   // Type 2 SDT parameters
-  vector[K] meta_d;
-  matrix<lower = 0, upper = 1>[K, nratings-1] cS1_p;
-  matrix<lower = 0, upper = 1>[K, nratings-1] cS2_p;
+  vector[N] meta_d;
+  matrix<lower = 0, upper = 1>[N, nratings-1] cS1_p;
+  matrix<lower = 0, upper = 1>[N, nratings-1] cS2_p;
 }
 
 transformed parameters{
-  vector[K] S2mu;                     //mean of S2 (Signal Distribution)
-  vector[K] S1mu;                     //mean of S1 (Noise Distribution)
-  matrix[K, nratings-1] cS1_raw;      //c2 vectors for S1 (cS1_p -> cS1_raw -> cS1)
-  matrix[K, nratings-1] cS2_raw;      //c2 vectors for S2 (cS2_p -> cS2_raw -> cS2)
-  matrix[K, nratings-1] cS1;          //c2 vectors (cS1_p -> cS1_raw -> cS1)
-  matrix[K, nratings-1] cS2;          //c2 vectors (cS2_p -> cS2_raw -> cS2)
+  vector[N] S2mu;                     //mean of S2 (Signal Distribution)
+  vector[N] S1mu;                     //mean of S1 (Noise Distribution)
+  matrix[N, nratings-1] cS1_raw;      //c2 vectors for S1 (cS1_p -> cS1_raw -> cS1)
+  matrix[N, nratings-1] cS2_raw;      //c2 vectors for S2 (cS2_p -> cS2_raw -> cS2)
+  matrix[N, nratings-1] cS1;          //c2 vectors (cS1_p -> cS1_raw -> cS1)
+  matrix[N, nratings-1] cS2;          //c2 vectors (cS2_p -> cS2_raw -> cS2)
   
-  matrix[K, 4] log_lik;
+  matrix[N, 4] log_lik;
 
-  for (i in 1:K){
+  for (i in 1:N){
     for (j in 1:(nratings-1)) {
       cS1_raw[i, j] = sample_from_tnormal_ub(c1[i], 0., 2., cS1_p[i, j]); //sampling from truncated normal distribution (upper bound)
       cS2_raw[i, j] = sample_from_tnormal_lb(c1[i], 0., 2., cS2_p[i, j]); //sampling from truncated normal distribution (lower bound)
@@ -70,7 +69,7 @@ transformed parameters{
   S1mu = -meta_d/2;
   
 
-  for (i in 1:K){
+  for (i in 1:N){
     real C_area_rS1;             // Correct rejection
     real I_area_rS1;             // Miss
     real C_area_rS2;             // Hit
@@ -136,7 +135,7 @@ model {
   //Type 2 priors
   meta_d ~ normal(d1,0.5);       //sampling meta-d 
 
-  for (i in 1:K){                //sampling c2 vectors for S1 and S2
+  for (i in 1:N){                //sampling c2 vectors for S1 and S2
     for (j in 1:(nratings-1)) {
       cS1_p[i, j] ~ uniform(0,1); //c2 vectors (cS1_p -> cS1_raw -> cS1)
       cS2_p[i, j] ~ uniform(0,1); //c2 vectors (cS2_p -> cS2_raw -> cS2)
@@ -147,10 +146,10 @@ model {
 }
 
 generated quantities{
-  real counts_pred[K, 4*nratings];
-  vector[K] Mratio;
+  real y_pred[N, 4*nratings];
+  vector[N] Mratio;
   
-  for (i in 1:K){
+  for (i in 1:N){
     Mratio[i] = meta_d[i]/d1[i];
   }
 
@@ -159,15 +158,15 @@ generated quantities{
   
   //Set all posterior predictions to 0 (avoids NULL values)
   
-  for (i in 1:K){
+  for (i in 1:N){
     for (r in 1:(4*nratings)){
-      counts_pred[i,r] = -1;
+      y_pred[i,r] = -1;
     } //end of r loop
   } //end of i loop
   
   
   { //local section, this saves time and space
-    for (i in 1:K){
+    for (i in 1:N){
       real C_area_rS1; // Correct rejection
       real I_area_rS1; // Miss
       real C_area_rS2; // Hit
@@ -211,10 +210,10 @@ generated quantities{
         prT[(j-1)*nratings+1:j*nratings] = normalize(0.999 * pr[(j-1)*nratings+1:j*nratings] + 0.001);
       } //end of j loop
 
-      counts_pred[i, 1:nratings] = multinomial_rng(prT[1:nratings], CR[i]); //CR
-      counts_pred[i, (nratings+1):(nratings*2)] = multinomial_rng(prT[(nratings+1):(nratings*2)], FA[i]); //False alarm
-      counts_pred[i, (nratings*2+1):(nratings*3)] = multinomial_rng(prT[(nratings*2+1):(nratings*3)], M[i]); // Miss
-      counts_pred[i, (nratings*3+1):(nratings*4)] = multinomial_rng(prT[(nratings*3+1):(nratings*4)], H[i]); // Hit rate
+      y_pred[i, 1:nratings] = multinomial_rng(prT[1:nratings], CR[i]); //CR
+      y_pred[i, (nratings+1):(nratings*2)] = multinomial_rng(prT[(nratings+1):(nratings*2)], FA[i]); //False alarm
+      y_pred[i, (nratings*2+1):(nratings*3)] = multinomial_rng(prT[(nratings*2+1):(nratings*3)], M[i]); // Miss
+      y_pred[i, (nratings*3+1):(nratings*4)] = multinomial_rng(prT[(nratings*3+1):(nratings*4)], H[i]); // Hit rate
 
     } //end of i loop
   } //end of local section

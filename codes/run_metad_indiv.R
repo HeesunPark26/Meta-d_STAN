@@ -1,4 +1,6 @@
-### 1_Indiv_runStan_ConPercep_point_2_J.R
+###########################
+##  Packages & Settings
+###########################
 
 rm(list=ls())  # remove all variables 
 
@@ -9,36 +11,43 @@ library(formattable)
 library(bayesplot)
 library(cowplot)
 library(rstanarm)
+
 # source HDIofMCMC.R to calculate HDI
-setwd("/Users/heesunpark/project/Meta-d_STAN")
+setwd("/home/heesunpark/project/Meta-d_STAN/codes/")
 source("HDIofMCMC.R") 
 
-#data = read.table("contrast_perception_counts.txt", header=T, sep="") #contrast
-data = read.table("orientation_perception_counts.txt", header=T, sep="") #orientation_perception
-#data = read.table("orientation_memory_counts.txt", header=T, sep="") #orientation_memory
+
+PATH_DATA = "/home/heesunpark/project/Meta-d_STAN/example_data/"
+PATH_FIGURE = "/home/heesunpark/project/Meta-d_STAN/figure/"
+
+DATA_NAME = "contrast_perception_counts.txt" #"orientation_perception_counts.txt" / "orientation_memory_counts.txt"
+FIGURE_VERSION = "Indiv_con_percept_"
+
+######################################################
+##  Load the Data and Process for use in STAN model
+######################################################
+
+data = read.table(paste0(PATH_DATA, DATA_NAME), header=T, sep="") 
 
 #data setting
 data <- as.matrix(data) 
 
 allSubjs =  c(1:dim(data)[1]) # all subject IDs
-K = length(allSubjs)      # number of subjects
+N = length(allSubjs)      # number of subjects
 Trials = sum(data[1,]) # number of trials per subject (=300)
 nratings = length(data[1,])/4
 
-counts <- array(0, c(K, length(data[1,])))
-N <- array(0,c(K))
-S <- array(0, c(K))
-H <- array(0, c(K))
-FA <- array(0, c(K))
-CR <- array(0, c(K))
-M <- array(0, c(K))
-for (i in 1:K){
+counts <- array(0, c(N, length(data[1,])))
+H <- array(0, c(N))
+FA <- array(0, c(N))
+CR <- array(0, c(N))
+M <- array(0, c(N))
+
+for (i in 1:N){
   counts[i,] <- data[i,]
 }
 
-for (i in 1:K){
-  N[i] <- sum(i,counts[1:(nratings*2)])
-  S[i] <- sum(counts[i,((nratings*2)+1):(nratings*4)])
+for (i in 1:N){
   H[i] <- sum(counts[i,((nratings*3)+1):(nratings*4)])
   FA[i] <- sum(counts[i,(nratings+1):(nratings*2)])
   CR[i] <- sum(counts[i, 1:(nratings)])
@@ -50,7 +59,7 @@ for (i in 1:K){
 d1 <- data.frame()
 c1 <- data.frame()
 
-for (i in 1:K){
+for (i in 1:N){
   adj_f <- 1/((nratings)*2)
   nR_S1_adj = counts[i,1:(nratings*2)] + adj_f
   nR_S2_adj = counts[i,((nratings*2)+1):(nratings*4)] + adj_f
@@ -74,9 +83,7 @@ c1 <- as.vector(as.matrix(c1))
 
 
 dataList <- list(
-  K = K,
   N = N,
-  S = S,
   H = H,   
   FA = FA,
   CR = CR,
@@ -87,29 +94,39 @@ dataList <- list(
   c1 = c1
 )
 
-output = stan("metad_indiv.stan", data = dataList, pars = c("meta_d", "cS1", "cS2", "log_lik", "counts_pred", "Mratio"),
+
+#####################################
+##  Run STAN model
+#####################################
+
+output = stan("metad_indiv.stan", data = dataList, pars = c("meta_d", "cS1", "cS2", "log_lik", "y_pred", "Mratio"),
               iter = 8000, warmup=4000, chains=4, cores=20)
-#save(output, file="/Users/heesunpark/project/Meta-d_STAN/Indiv.RData")
+
+# save(output, file="/Users/heesunpark/project/Meta-d_STAN/Indiv.RData")
 
 
-version = "ori_percept/1_2/1_2_Indiv_v2"
-fig_path = "/home/heesunpark/meta-d_/_TermProject/figure/"
+###############################################
+##  Check trace plots
+###############################################
 
 #traceplot
 trace_meta <- traceplot(output, pars="meta_d")
-ggsave(paste0(fig_path,version,'_trace_meta.jpg'), trace_meta,width=40, height=24, units="cm",dpi=300)
+ggsave(paste0(PATH_FIGURE,FIGURE_VERSION,'_trace_meta.jpg'), trace_meta,width=40, height=24, units="cm",dpi=300)
 
 trace_cS1 <- traceplot(output, pars="cS1")
-ggsave(paste0(fig_path,version,'_trace_cS1.jpg'), trace_cS1, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE,FIGURE_VERSION,'_trace_cS1.jpg'), trace_cS1, width=40, height=24, units="cm", dpi=300)
 
 trace_cS2 <- traceplot(output, pars="cS2")
-ggsave(paste0(fig_path,version,'_trace_cS2.jpg'), trace_cS2, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE,FIGURE_VERSION,'_trace_cS2.jpg'), trace_cS2, width=40, height=24, units="cm", dpi=300)
+
+
+##################################################
+##  Posterior predictive check
+##################################################
 
 
 #extract data
 extract_output <- rstan::extract(output)
-
-#Posterior predictive check
 
 for (j in 1:(nratings*4)){
   
@@ -127,32 +144,39 @@ a4 <- grid.arrange(get(paste("PP_dens",13,sep="")), get(paste("PP_dens",14,sep="
 
 ppc_distribution <- grid.arrange(a1,a2,a3,a4, nrow=4)
 
-ggsave(paste0(fig_path, version,'_PPC_distribution.jpg'), ppc_distribution, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_PPC_distribution.jpg'), ppc_distribution, width=40, height=24, units="cm", dpi=300)
 
 #save hist
 for (j in 1:(nratings*4)){
-  ggsave(paste0(fig_path, version,'_PPC_hist_counts[',j,'].jpg'), get(paste("PP_hist",j,sep="")), width=40, height=24, units="cm", dpi=300)
+  ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_PPC_hist_counts[',j,'].jpg'), get(paste("PP_hist",j,sep="")), width=40, height=24, units="cm", dpi=300)
 }
 
 
-#Posterior distribution
+##################################################
+## Plot distributions
+##################################################
+
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 95% intervals")
 pd_meta_d <- mcmc_areas(output, regex_pars = 'meta_d', prob = 0.95) + plot_title
-ggsave(paste0(fig_path, version,'_posterior_distribution_meta_d.jpg'), pd_meta_d, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_meta_d.jpg'), pd_meta_d, width=40, height=24, units="cm", dpi=300)
 
 pd_cS1 <- mcmc_intervals(output, pars = c(paste0('cS1[', c(1:K), ',1]'), paste0('cS1[', c(1:K), ',2]'), paste0('cS1[', c(1:K), ',3]')), prob = 0.95) + plot_title
-ggsave(paste0(fig_path, version,'_posterior_distribution_cS1.jpg'), pd_cS1, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_cS1.jpg'), pd_cS1, width=40, height=24, units="cm", dpi=300)
 
 pd_cS2 <- mcmc_intervals(output, pars = c(paste0('cS2[', c(1:K), ',1]'), paste0('cS2[', c(1:K), ',2]'), paste0('cS2[', c(1:K), ',3]')), prob = 0.95) + plot_title
-ggsave(paste0(fig_path, version,'_posterior_distribution_cS2.jpg'), pd_cS2, width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_cS2.jpg'), pd_cS2, width=40, height=24, units="cm", dpi=300)
 
 pd_Mratio <- mcmc_areas(output, regex_pars = 'Mratio', prob = 0.95) + plot_title
-ggsave(paste0(fig_path, version,'_posterior_distribution_Mratio.jpg'), pd_Mratio,width=40, height=24, units="cm", dpi=300)
+ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_Mratio.jpg'), pd_Mratio,width=40, height=24, units="cm", dpi=300)
 
 
-#rhat
-rhats <- rhat(output) #bayesplot package
+
+##################################################
+## Check rhats
+##################################################
+
+rhats <- rhat(output) # bayesplot package
 
 rhats_meta_d <- NULL
 for (i in 1:K){rhats_meta_d <- rbind(rhats_meta_d, rhats[paste0("meta_d[",i,"]")])}
@@ -164,4 +188,4 @@ for (i in 1:K){
 }
 cS1S2rhat <- mcmc_rhat(as.vector(rhats_cS1_cS2)) + ggtitle("rhat of cS1 and cS2")
 rhatplots <- grid.arrange(metarhat, cS1S2rhat, ncol=3)
-ggsave(paste0(fig_path,version,"_rhat.jpg"), rhatplots, width=33, height=10, units="cm",dpi=300)
+ggsave(paste0(PATH_FIGURE,FIGURE_VERSION,"_rhat.jpg"), rhatplots, width=33, height=10, units="cm",dpi=300)
