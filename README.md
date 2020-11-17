@@ -2,6 +2,7 @@
 The Stan codes of Meta-d' Model
 
 - Term Project of Computational modeling course (Spring 2020)
+- For the details of the term project, please visit [here](https://drive.google.com/drive/folders/1-pREh7Nv_k1mXIbE79J3DAAJm_To5O0Z?usp=sharing) (Google Drive). You can find a pdf file and other versions of codes.
 - The codes implements the meta-d' model ([Maniscalco & Lau 2012](https://doi.org/10.1016/j.concog.2011.09.021)) in a non-hierarchical and hierarchical Bayesian framework using STAN. The hierarchical version also referred HMeta-d' toolbox from [Fleming 2017](https://doi.org/10.1093/nc/nix007).
 
 ## Folders and Files
