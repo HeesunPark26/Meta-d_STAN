@@ -179,11 +179,11 @@ ggsave(paste0(PATH_FIGURE, FIGURE_VERSION,'_posterior_distribution_Mratio.jpg'),
 rhats <- rhat(output) # bayesplot package
 
 rhats_meta_d <- NULL
-for (i in 1:K){rhats_meta_d <- rbind(rhats_meta_d, rhats[paste0("meta_d[",i,"]")])}
+for (i in 1:N){rhats_meta_d <- rbind(rhats_meta_d, rhats[paste0("meta_d[",i,"]")])}
 metarhat <- mcmc_rhat(as.vector(rhats_meta_d)) + ggtitle("rhat of meta-d")
 
 rhats_cS1_cS2 <- NULL
-for (i in 1:K){
+for (i in 1:N){
   rhats_cS1_cS2 <- rbind(rhats_cS1_cS2, rhats[paste0("cS1[",i,",1]")], rhats[paste0("cS1[",i,",2]")], rhats[paste0("cS1[",i,",3]")], rhats[paste0("cS2[",i,",1]")], rhats[paste0("cS2[",i,",2]")], rhats[paste0("cS2[",i,",3]")])
 }
 cS1S2rhat <- mcmc_rhat(as.vector(rhats_cS1_cS2)) + ggtitle("rhat of cS1 and cS2")
